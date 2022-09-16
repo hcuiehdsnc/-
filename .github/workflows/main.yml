@@ -1,32 +1,37 @@
-name: morning
-on:
-  schedule:
-  - cron:  '0 23 * * *'
-  workflow_dispatch:
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
+name: weixin-push-on-time
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每天国际时间 02:10 运行, 即北京时间 10:10 运行
+    - cron: '10 2 * * *'
+    
 jobs:
-  send_message:
+  build:
+
     runs-on: ubuntu-latest
-    name: send morning to your girlfriend
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - name: checkout
-      uses: actions/checkout@v3
+    # 添加定时任务指定运行分支 默认为master
+    - uses: actions/checkout@v3
       with:
-        ref: master
-
-    - name: sender
-      uses: actions/setup-python@v2
+          ref: 'master'
+          
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
       with:
-        python-version: '3.x'
-        architecture: 'x64'
-    - run: pip install -r ./requirements.txt && python ./main.py
-
-    env:
-      APP_ID: ${{ secrets.APP_ID }}
-      APP_SECRET: ${{ secrets.APP_SECRET }}
-      TEMPLATE_ID: ${{ secrets.TEMPLATE_ID }}
-      USER_ID: ${{ secrets.USER_ID }}
-      START_DATE: ${{ secrets.START_DATE }}
-      BIRTHDAY: ${{ secrets.BIRTHDAY }}
-      CITY: ${{ secrets.CITY }}
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run dev --if-present
+    env: 
+      APP_ID: ${{secrets.APP_ID}}
+      APP_SECRET: ${{secrets.APP_SECRET}}
